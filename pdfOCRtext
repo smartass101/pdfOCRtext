@@ -3,15 +3,18 @@
 
 DEFAULT_DPI=600
 DEFAULT_LANG="eng"
+DEFAULT_IMG_FORMAT="pgm"
 
 if [ $# -lt 1 ] ; then
-    echo "Usage: " $(basename $0) "<PDF file> [<output name>] [<language>] [<resolution in DPI>]"
+    echo "Usage: " $(basename $0) "<PDF file> [<output name>] [<language>] [<resolution in DPI>] [<image format>]"
     echo "<output name>: name of the file to write text into. If '-', write to STDOUT."
     echo  "              Default: <PDF file name without PDF suffix>.txt"
     echo "<language>: language used in the PDF file, defaults to eng (English)"
     echo '            The identifier can be found in the output of `tesseract --list-langs`'
     echo "<resolution in DPI>: the resolution to use for intermediate PDF to image transformation."
     echo "                     ${DEFAULT_DPI} DPI by default."
+    echo "<image format>: the intermediary image format to transform the PDF pages to for OCR. Default: pgm"
+    echo "                one of: pgm, ppm, tif, pbm"
     exit 1
 fi
 
@@ -38,13 +41,29 @@ else
     DPI=$4
 fi
 
+if [ -z "$5" ] ; then
+    image_fmt=$DEFAULT_IMG_FORMAT
+else
+    image_fmt=$5
+fi
+
+case $image_fmt in 
+    pgm)
+	image_command="-gray";;
+    pbm)
+	image_command="-mono";;
+    tif)
+	image_command="-tiff";;
+    ppm|*)
+	image_command="";;
+esac
 
 img_dir=$(mktemp --directory)	# temporary dir into which place the images for OCR
 tes_f=$(mktemp --suffix=.txt)	# temporary file into which write the output from OCR
 tes_b="$(dirname $tes_f)/$(basename --suffix=.txt $tes_f)" # name of output file withotu suffix 
-pdftoppm -gray -r "$DPI" "$1" "${img_dir}/images"
+pdftoppm $image_command -r "$DPI" "$1" "${img_dir}/images"
 
-for img in $img_dir/images*.pgm ; do
+for img in $img_dir/images*.$image_fmt ; do
     tesseract $img $tes_b -l $lang 2>/dev/null
     cat $tes_f >> $out_f
 done
