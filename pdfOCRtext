@@ -1,0 +1,58 @@
+#!/bin/sh
+# tesseract and pdftoppm (Poppler) wrapper to simplify OCR transformation of PDF to text 
+
+DEFAULT_DPI=600
+DEFAULT_LANG="eng"
+
+if [ $# -lt 1 ] ; then
+    echo "Usage: " $(basename $0) "<PDF file> [<output name>] [<language>] [<resolution in DPI>]"
+    echo "<output name>: name of the file to write text into. If '-', write to STDOUT."
+    echo  "              Default: <PDF file name without PDF suffix>.txt"
+    echo "<language>: language used in the PDF file, defaults to eng (English)"
+    echo '            The identifier can be found in the output of `tesseract --list-langs`'
+    echo "<resolution in DPI>: the resolution to use for intermediate PDF to image transformation."
+    echo "                     ${DEFAULT_DPI} DPI by default."
+    exit 1
+fi
+
+# out_f is the file into which all text output is directed
+if [ -z "$2" ] ; then
+    out_f="$(dirname $1)/$(basename --suffix=.pdf $1)"
+    rm $out_f 2>/dev/null
+elif [ "$2" = "-" ] ; then
+    out_f=$(mktemp)
+else
+    out_f=$2
+    rm $out_f 2>/dev/null
+fi
+
+if [ -z "$3" ] ; then
+    lang=$DEFAULT_LANG
+else
+    lang=$3
+fi
+
+if [ -z "$4" ] ; then
+    DPI=$DEFAULT_DPI
+else
+    DPI=$4
+fi
+
+
+img_dir=$(mktemp --directory)	# temporary dir into which place the images for OCR
+tes_f=$(mktemp --suffix=.txt)	# temporary file into which write the output from OCR
+tes_b="$(dirname $tes_f)/$(basename --suffix=.txt $tes_f)" # name of output file withotu suffix 
+pdftoppm -gray -r "$DPI" "$1" "${img_dir}/images"
+
+for img in $img_dir/images*.pgm ; do
+    tesseract $img $tes_b -l $lang 2>/dev/null
+    cat $tes_f >> $out_f
+done
+
+if [ "$2" = "-" ] ; then
+   cat $out_f
+   rm $out_f
+fi
+
+rm -r $img_dir
+exit 0
