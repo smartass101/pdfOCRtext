@@ -1,7 +1,7 @@
 * pdfOCRtext
-This little [[%20http://code.google.com/p/tesseract-ocr/][tesseract]] and pdftoppm (part of the [[%20http://poppler.freedesktop.org/][Poppler library]]) wrapper simplifies extraction of text from PDF files using OCr (Optical Character Recognition).
+This little [[http://code.google.com/p/tesseract-ocr/][tesseract]] and pdftoppm (part of the [[http://poppler.freedesktop.org/][Poppler library]]) wrapper simplifies extraction of text from PDF files using OCR (Optical Character Recognition).
 * Motivation
-Sometimes old PDF files have such mangled text encodings that =pdftotext= cannot extract enything sane. OCR is often the only viable option in that case.
+Sometimes old PDF files have such mangled text encodings that =pdftotext= cannot extract anything sane. OCR is often the only viable option in that case.
 * Usage
 Run just the command =pdfOCRtext= with no arguments to see the usage information.
 You can try different intermediary image formats and DPI to get better results, but the default should work well enough.
